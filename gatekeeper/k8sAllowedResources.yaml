@@ -1,0 +1,38 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8allowedresources
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sAllowedResources
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8allowedresources
+
+        # List of allowed apiGroups and kinds
+        allowed_api_groups = {"", "apps", "batch", "networking.k8s.io", "rbac.authorization.k8s.io"}
+        allowed_kinds = {"Namespace", "Pod", "Service", "Deployment", "StatefulSet", "DaemonSet", "Job", "CronJob", "Ingress", "Role", "RoleBinding", "ConstraintTemplate"}
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind != ""  # skip unknown objects
+          not allowed_api_groups[input.review.kind.group]
+
+          kind := input.review.kind.kind
+          group := input.review.kind.group
+          user := input.review.userInfo.username
+
+          msg := sprintf("Resource kind \"%v\" is not allowed in apiGroup \"%v\" for user \"%v\"", [kind, group, user])
+        }
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind != ""  # skip unknown objects
+          not allowed_kinds[input.review.kind.kind]
+
+          kind := input.review.kind.kind
+          user := input.review.userInfo.username
+
+          msg := sprintf("Resource kind \"%s\" is not allowed for user \"%v\"", [kind, user])
+        }
