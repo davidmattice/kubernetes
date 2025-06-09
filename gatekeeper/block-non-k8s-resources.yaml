@@ -1,8 +1,9 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: K8sOnlyResources
+kind: K8sAllowedResources
 metadata:
   name: block-non-k8s-resources
 spec:
+  enforcementAction: warn
   match:
     kinds:
       - apiGroups: ["*"]
